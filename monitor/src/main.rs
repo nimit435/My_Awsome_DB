@@ -1,6 +1,12 @@
 use anyhow::{Context, Result, bail};
 use clap::Parser;
+
+#[cfg(target_os = "macos")]
 use libc::{rlimit, setrlimit};
+
+#[cfg(target_os = "linux")]
+use libc::{rlimit64 as rlimit, setrlimit64 as setrlimit};
+
 use monitor_config::{
     MonitorConfig,
     monitor_config::{DatabaseConfig, QueryConfig},
