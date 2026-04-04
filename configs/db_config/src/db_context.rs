@@ -34,7 +34,4 @@ impl DbContext {
     pub fn get_table_specs(&self) -> &Vec<TableSpec> {
         &self.table_specs
     }
-
-    pub fn get_table_by_name(&self, table_name: &str) -> Option<&TableSpec> {
-        self.table_specs.iter().find(|t| t.name == table_name)
-    }
+}

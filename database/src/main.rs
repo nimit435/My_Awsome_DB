@@ -11,6 +11,7 @@ use crate::{
 
 mod cli;
 mod io_setup;
+mod tree_modification;
 
 fn db_main() -> Result<()> {
     let cli_options = CliOptions::parse();
