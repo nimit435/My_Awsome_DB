@@ -3,7 +3,6 @@ use clap::Parser;
 use common::query::Query;
 use db_config::DbContext;
 use std::io::{BufRead, BufReader, Read, Write};
-
 use crate::{
     cli::CliOptions,
     io_setup::{setup_disk_io, setup_monitor_io},
@@ -12,7 +11,7 @@ use crate::{
 mod cli;
 mod io_setup;
 mod tree_modification;
-
+mod basic_func;
 fn db_main() -> Result<()> {
     let cli_options = CliOptions::parse();
 
@@ -38,44 +37,53 @@ fn db_main() -> Result<()> {
     let mut disk_buf_reader = BufReader::new(disk_in);
     let mut monitor_buf_reader = BufReader::new(monitor_in);
 
+    let mut vec = basic_func::read_block(&String::from("partsupp"), 0, 2, &mut disk_buf_reader, &mut disk_out, &ctx).unwrap();
+    for i in &vec {
+        for j in i {
+            println!(" {}" , j);
+        }
+        println!();
+    }
     // Temporary variable to read a line of input
-    let mut input_line = String::new();
+    // let mut input_line = String::new();
 
-    // Read query form monitor
-    monitor_buf_reader.read_line(&mut input_line)?;
-    let query: Query = serde_json::from_str(&input_line).unwrap();
-    println!("Input query is: {:#?}", query);
+    // // Read query form monitor
+    // monitor_buf_reader.read_line(&mut input_line)?;
+    // let query: Query = serde_json::from_str(&input_line).unwrap();
+    // tree_modification::final_modify_split(query);
+    // tree_modification::move_filter(query);
+    // println!("Input query is: {:#?}", query);
 
-    // Interacting with with Disk
+    // // Interacting with with Disk
 
-    // Get block size
-    disk_out.write_all("get block-size\n".as_bytes())?;
-    disk_out.flush()?;
+    // // Get block size
+    // disk_out.write_all("get block-size\n".as_bytes())?;
+    // disk_out.flush()?;
 
-    input_line.clear();
-    disk_buf_reader.read_line(&mut input_line)?;
-    let block_size: u64 = input_line.trim().parse()?;
+    // input_line.clear();
+    // disk_buf_reader.read_line(&mut input_line)?;
+    // let block_size: u64 = input_line.trim().parse()?;
 
-    println!("block size is {}", block_size);
+    // println!("block size is {}", block_size);
 
-    disk_out.write_all("get block 0 1\n".as_bytes())?;
-    disk_out.flush()?;
+    // disk_out.write_all("get block 0 1\n".as_bytes())?;
+    // disk_out.flush()?;
 
-    let mut buf = vec![0u8; block_size as usize];
-    disk_buf_reader.read_exact(&mut buf)?;
+    // let mut buf = vec![0u8; block_size as usize];
+    // disk_buf_reader.read_exact(&mut buf)?;
 
-    println!(
-        "First few bytes of block 0 contains {:?}",
-        String::from_utf8_lossy(&buf[..50])
-    );
+    // println!(
+    //     "First few bytes of block 0 contains {:?}",
+    //     String::from_utf8_lossy(&buf[..50])
+    // );
 
-    // Get memory limit from monitor
-    input_line.clear();
-    monitor_out.write_all("get_memory_limit\n".as_bytes())?;
-    monitor_out.flush()?;
-    monitor_buf_reader.read_line(&mut input_line)?;
-    let memory_limit_mb: u32 = input_line.trim().parse()?;
-    println!("Memory limit is set to {} MB", memory_limit_mb);
+    // // Get memory limit from monitor
+    // input_line.clear();
+    // monitor_out.write_all("get_memory_limit\n".as_bytes())?;
+    // monitor_out.flush()?;
+    // monitor_buf_reader.read_line(&mut input_line)?;
+    // let memory_limit_mb: u32 = input_line.trim().parse()?;
+    // println!("Memory limit is set to {} MB", memory_limit_mb);
 
     // Send result of query to monitor for validation
     /*
