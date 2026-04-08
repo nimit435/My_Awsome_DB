@@ -30,7 +30,7 @@ pub fn read_block(file_id : &String , row_id : u64 , number_of_rows : u64 , disk
     let strt_ind : usize = input.trim().parse().expect("File id does not exist");
     input.clear();
 
-    let ind :u64 = strt_ind as u64 + row_id - 1;
+    let ind :u64 = strt_ind as u64 + row_id;
     let act_ind = get_ind(ctx , file_id);
     let table = &ctx.get_table_specs()[act_ind as usize];
     disk_out.write_all(String::from("get block-size\n").as_bytes()).map_err(|e| e.to_string())?;
@@ -41,42 +41,45 @@ pub fn read_block(file_id : &String , row_id : u64 , number_of_rows : u64 , disk
     input.clear();
     let mut buf = vec![0u8; block_size as usize];
     let mut res : Vec<Vec<String>> = Vec::new();
-    for i in ind..ind + number_of_rows {
+    let mut i = ind;
+    while res.len() < number_of_rows as usize {
         disk_out.write_all(format!("get block {} {}\n" , i , 1).as_bytes()).map_err(|e| e.to_string())?;
         disk_buf.read_exact(&mut buf).map_err(|e| e.to_string())?;
         let mut k = 0;
-        let mut v = Vec::new();
-        for j in &table.column_specs {
-            let mut b = Vec::new();
-            match j.data_type {
-                common::DataType::String => {
-                    while buf[k] != 0 {
-                        b.push(buf[k]);
+        while k < buf.len() as usize && res.len() < number_of_rows as usize {
+            let mut v = Vec::new();
+            for j in &table.column_specs {
+                let mut b = Vec::new();
+                match j.data_type {
+                    common::DataType::String => {
+                        while buf[k] != 0 {
+                            b.push(buf[k]);
+                            k += 1;
+                        }
                         k += 1;
-                    }
-                    k += 1;
-                    v.push(String::from_utf8_lossy(&b).to_string());
-                },
-                common::DataType::Int32 => {
-                    v.push(u32::from_le_bytes(buf[k..k + 4].try_into().unwrap()).to_string());
-                    k += 4;
-                },
-                common::DataType::Int64 => {
-                    v.push(u64::from_le_bytes(buf[k..k + 8].try_into().unwrap()).to_string());
-                    k += 8; 
-                },
-                common::DataType::Float32 => {
-                    v.push(f32::from_le_bytes(buf[k..k + 4].try_into().unwrap()).to_string());
-                    k += 4;
-                },
-                common::DataType::Float64 => {
-                    v.push(f64::from_le_bytes(buf[k..k + 8].try_into().unwrap()).to_string());
-                    k += 8;
-                },
+                        v.push(String::from_utf8_lossy(&b).to_string());
+                    },
+                    common::DataType::Int32 => {
+                        v.push(u32::from_le_bytes(buf[k..k + 4].try_into().unwrap()).to_string());
+                        k += 4;
+                    },
+                    common::DataType::Int64 => {
+                        v.push(u64::from_le_bytes(buf[k..k + 8].try_into().unwrap()).to_string());
+                        k += 8; 
+                    },
+                    common::DataType::Float32 => {
+                        v.push(f32::from_le_bytes(buf[k..k + 4].try_into().unwrap()).to_string());
+                        k += 4;
+                    },
+                    common::DataType::Float64 => {
+                        v.push(f64::from_le_bytes(buf[k..k + 8].try_into().unwrap()).to_string());
+                        k += 8;
+                    },
+                }
             }
+            res.push(v);
         }
-        res.push(v);
-        
+        i += 1;
     }
     Ok(res)
 }

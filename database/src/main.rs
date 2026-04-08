@@ -38,60 +38,40 @@ fn db_main() -> Result<()> {
     let mut monitor_buf_reader = BufReader::new(monitor_in);
 
     let mut vec = basic_func::read_block(&String::from("partsupp"), 0, 2, &mut disk_buf_reader, &mut disk_out, &ctx).unwrap();
+    
+    // Print to your terminal so you can see it
     for i in &vec {
         for j in i {
-            println!(" {}" , j);
+            print!("{}|", j);
         }
         println!();
     }
-    // Temporary variable to read a line of input
+
+    // --- MUST UNCOMMENT AND FIX THIS TO TALK TO THE MONITOR ---
     // let mut input_line = String::new();
-
-    // // Read query form monitor
+    
+    // // 1. Read the query from the monitor first (Required)
     // monitor_buf_reader.read_line(&mut input_line)?;
-    // let query: Query = serde_json::from_str(&input_line).unwrap();
-    // tree_modification::final_modify_split(query);
-    // tree_modification::move_filter(query);
-    // println!("Input query is: {:#?}", query);
-
-    // // Interacting with with Disk
-
-    // // Get block size
-    // disk_out.write_all("get block-size\n".as_bytes())?;
-    // disk_out.flush()?;
-
-    // input_line.clear();
-    // disk_buf_reader.read_line(&mut input_line)?;
-    // let block_size: u64 = input_line.trim().parse()?;
-
-    // println!("block size is {}", block_size);
-
-    // disk_out.write_all("get block 0 1\n".as_bytes())?;
-    // disk_out.flush()?;
-
-    // let mut buf = vec![0u8; block_size as usize];
-    // disk_buf_reader.read_exact(&mut buf)?;
-
-    // println!(
-    //     "First few bytes of block 0 contains {:?}",
-    //     String::from_utf8_lossy(&buf[..50])
-    // );
-
-    // // Get memory limit from monitor
-    // input_line.clear();
-    // monitor_out.write_all("get_memory_limit\n".as_bytes())?;
+    
+    // // 2. Tell the monitor you are about to send validation data
+    // monitor_out.write_all(b"validate\n")?;
+    
+    // // 3. Loop through your Vec<Vec<String>> and send it to the monitor!
+    // for row in &vec {
+    //     let mut row_string = String::new();
+    //     for col in row {
+    //         row_string.push_str(col);
+    //         row_string.push('|');
+    //     }
+    //     row_string.push('\n');
+        
+    //     // Send this row to the monitor
+    //     monitor_out.write_all(row_string.as_bytes())?;
+    // }
+    
+    // // 4. Send the '!' character to tell the monitor you are finished
+    // monitor_out.write_all(b"!\n")?;
     // monitor_out.flush()?;
-    // monitor_buf_reader.read_line(&mut input_line)?;
-    // let memory_limit_mb: u32 = input_line.trim().parse()?;
-    // println!("Memory limit is set to {} MB", memory_limit_mb);
-
-    // Send result of query to monitor for validation
-    /*
-    monitor_out.write_all("validate\n".as_bytes())?;
-    monitor_out.write_all("1|hello|DBMS|\n".as_bytes())?;
-    monitor_out.write_all("!\n".as_bytes())?;
-    monitor_out.flush()?;
-    */
 
     Ok(())
 }
