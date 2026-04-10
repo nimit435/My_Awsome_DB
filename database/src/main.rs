@@ -12,6 +12,7 @@ mod cli;
 mod io_setup;
 mod tree_modification;
 mod basic_func;
+mod process_query;
 fn db_main() -> Result<()> {
     let cli_options = CliOptions::parse();
 
@@ -36,8 +37,12 @@ fn db_main() -> Result<()> {
     // Use buffered reader to read lines easier
     let mut disk_buf_reader = BufReader::new(disk_in);
     let mut monitor_buf_reader = BufReader::new(monitor_in);
-
-    let mut vec = basic_func::read_block(&String::from("partsupp"), 0, 2, &mut disk_buf_reader, &mut disk_out, &ctx).unwrap();
+    let mut n_ctx = Vec::new();
+    let c_tb = ctx.get_table_specs();
+    for tb in &c_tb[0].column_specs {
+        n_ctx.push(tb.data_type.clone());
+    }
+    let mut vec = basic_func::read_block(0 as usize , &n_ctx , &mut disk_out , &mut disk_buf_reader).unwrap();
     
     // Print to your terminal so you can see it
     for i in &vec {
