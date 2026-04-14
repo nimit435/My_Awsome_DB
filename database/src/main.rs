@@ -70,7 +70,7 @@ fn db_main() -> Result<()> {
     monitor_buf_reader.read_line(&mut input_line)?;
     let memory_limit_mb: u32 = input_line.trim().parse()?;
     println!("Memory limit is set to {} MB", memory_limit_mb);
-
+    input_line.clear();
     // Send result of query to monitor for validation
     monitor_out.write_all("validate\n".as_bytes())?;
     for i in 0..size {
@@ -78,7 +78,9 @@ fn db_main() -> Result<()> {
         for j in 0..res.len() {
             for k in 0..res[j].len() {
                 monitor_out.write_all(format!{"{}|" , res[j][k]}.as_bytes())?;
+                print!("{}|" , res[j][k]);
             }
+            println!("\n");
             monitor_out.write_all("!\n".as_bytes())?;
         }
     }
