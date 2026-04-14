@@ -12,15 +12,32 @@ use common::query::Predicate;
 use common::query::{ComparisionValue, SortSpec};
 use std::cmp::{min, max};
 pub fn master(write_ind : &mut usize , query : &query::QueryOp ,  disk_buf : &mut impl BufRead , disk_out : &mut impl Write , ctx : &DbContext) -> Result<(usize , usize , Vec<(String ,DataType)>) , String> {
-    let mut input = String::new();
-    match query {
-        query::QueryOp::Scan(data) => {
-            disk_out.write_all(format!{"get file start-block {}",data.table_id}.as_bytes()).map_err(|e|e.to_string());
+            let mut input = String::new();
+            match query {
+                query::QueryOp::Scan(data) => {
+                    let mut actual_file_id = String::new();
+            let mut ind = 0;
+            let mut inpt = 0;
+            
+            for table in ctx.get_table_specs() {
+                // Match the table name to the query's table_id
+                if table.name == data.table_id {
+                    actual_file_id = table.file_id.clone();
+                    inpt = ind;
+                    break;
+                }
+                ind += 1;
+            }
+
+            if actual_file_id.is_empty() {
+                panic!("Could not find file_id for table: {}", data.table_id);
+            }
+            disk_out.write_all(format!{"get file start-block {}\n",actual_file_id}.as_bytes()).map_err(|e|e.to_string());
             disk_out.flush();
             disk_buf.read_line(&mut input).map_err(|e|e.to_string());
             let strt_block = input.trim().parse().expect("Wrong file.");
             input.clear();
-            disk_out.write_all(format!{"get file num-blocks {}" , strt_block}.as_bytes()).map_err(|e|e.to_string());
+            disk_out.write_all(format!{"get file num-blocks {}\n" , strt_block}.as_bytes()).map_err(|e|e.to_string());
             disk_out.flush();
             disk_buf.read_line(&mut input).map_err(|e|e.to_string());
             let num_of_blocks : usize = input.trim().parse().expect("Error parsing int");
@@ -643,7 +660,7 @@ pub fn block_cross(write_ind : usize , block_id1 : usize , block_id2 : usize , c
 pub fn project(write_ind : usize , column_ids : &Vec<usize> , read_ind : usize , ctx : &Vec<(String , DataType)> , disk_buf : &mut impl BufRead , disk_out : &mut impl Write , number_of_blocks : u64) -> Result<(usize , usize , Vec<(String , DataType)>) , String> {
     let mut block_fill = 0;
     let mut input = String::new();
-    disk_out.write_all(format!{"get block-size"}.as_bytes()).map_err(|e| e.to_string());
+    disk_out.write_all(format!{"get block-size\n"}.as_bytes()).map_err(|e| e.to_string());
     disk_out.flush().map_err(|e|e.to_string());
     disk_buf.read_line(&mut input).map_err(|e|e.to_string());
     let block_size :usize = input.trim().parse().expect("Not a real integer for block_size.");
