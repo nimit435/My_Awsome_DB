@@ -12,16 +12,6 @@ use crate::{
     io_setup::{setup_disk_io, setup_monitor_io},
 };
 
-pub fn get_ind(ctx : &DbContext , file_id : &String) -> u64{
-    let mut ans = 0;
-    for i in ctx.get_table_specs() {
-        if i.file_id == *file_id {
-            break;
-        }
-    }
-    ans
-}
-
 pub fn read_block(block_id : usize , ctx : &Vec<(String , DataType)> , disk_out : &mut impl Write , disk_buf : &mut impl BufRead) -> Result<Vec<Vec<String>>,String> {
     let mut input = String::new();
     disk_out.write_all(String::from("get block-size\n").as_bytes()).map_err(|e| e.to_string())?;

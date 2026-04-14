@@ -18,17 +18,6 @@ fn db_main() -> Result<()> {
 
     // Use the ctx to the tables and stats
     let ctx = DbContext::load_from_file(cli_options.get_config_path())?;
-    for table_spec in ctx.get_table_specs() {
-        println!("Table: {}", table_spec.name);
-        println!("File id: {}", table_spec.file_id);
-        for column_spec in &table_spec.column_specs {
-            println!(
-                "\tColumn: {} ({:?})",
-                column_spec.column_name, column_spec.data_type
-            );
-        }
-        println!();
-    }
 
     // Setups and provides handler to talk with disk and monitor
     let (disk_in, mut disk_out) = setup_disk_io();
@@ -37,47 +26,63 @@ fn db_main() -> Result<()> {
     // Use buffered reader to read lines easier
     let mut disk_buf_reader = BufReader::new(disk_in);
     let mut monitor_buf_reader = BufReader::new(monitor_in);
-    let mut n_ctx = Vec::new();
-    let c_tb = ctx.get_table_specs();
-    for tb in &c_tb[0].column_specs {
-        n_ctx.push(tb.data_type.clone());
-    }
-    let mut vec = basic_func::read_block(0 as usize , &n_ctx , &mut disk_out , &mut disk_buf_reader).unwrap();
-    
-    // Print to your terminal so you can see it
-    for i in &vec {
-        for j in i {
-            print!("{}|", j);
+
+    // Temporary variable to read a line of input
+    let mut input_line = String::new();
+
+    // Read query form monitor
+    monitor_buf_reader.read_line(&mut input_line)?;
+    let query: Query = serde_json::from_str(&input_line).unwrap();
+    println!("Input query is: {:#?}", query);
+
+    // Interacting with with Disk
+
+    // Get block size
+    // disk_out.write_all("get block-size\n".as_bytes())?;
+    // disk_out.flush()?;
+
+    // input_line.clear();
+    // disk_buf_reader.read_line(&mut input_line)?;
+    // let block_size: u64 = input_line.trim().parse()?;
+
+    // println!("block size is {}", block_size);
+
+    // disk_out.write_all("get block 0 1\n".as_bytes())?;
+    // disk_out.flush()?;
+
+    // let mut buf = vec![0u8; block_size as usize];
+    // disk_buf_reader.read_exact(&mut buf)?;
+
+    // println!(
+    //     "First few bytes of block 0 contains {:?}",
+    //     String::from_utf8_lossy(&buf[..50])
+    // );
+    input_line.clear();
+    disk_out.write_all(format!{"get anon-start-block"}.as_bytes()).map_err(|e| e.to_string());
+    disk_out.flush();
+    disk_buf_reader.read_line(&mut input_line).map_err(|e| e.to_string());
+    let mut write_block : usize = input_line.trim().parse().expect("Error in parsing");
+    let (strt_block , size , ctx) = process_query::master(&mut write_block , &query.root , &mut disk_buf_reader , &mut disk_out , &ctx).unwrap();
+
+    // Get memory limit from monitor
+    monitor_out.write_all("get_memory_limit\n".as_bytes())?;
+    monitor_out.flush()?;
+    monitor_buf_reader.read_line(&mut input_line)?;
+    let memory_limit_mb: u32 = input_line.trim().parse()?;
+    println!("Memory limit is set to {} MB", memory_limit_mb);
+
+    // Send result of query to monitor for validation
+    monitor_out.write_all("validate\n".as_bytes())?;
+    for i in 0..size {
+        let res = basic_func::read_block(strt_block  + i, &ctx , &mut disk_out  , &mut disk_buf_reader).unwrap();
+        for j in 0..res.len() {
+            for k in 0..res[j].len() {
+                monitor_out.write_all(format!{"{}|" , res[j][k]}.as_bytes())?;
+            }
+            monitor_out.write_all("!\n".as_bytes())?;
         }
-        println!();
     }
-
-    // --- MUST UNCOMMENT AND FIX THIS TO TALK TO THE MONITOR ---
-    // let mut input_line = String::new();
-    
-    // // 1. Read the query from the monitor first (Required)
-    // monitor_buf_reader.read_line(&mut input_line)?;
-    
-    // // 2. Tell the monitor you are about to send validation data
-    // monitor_out.write_all(b"validate\n")?;
-    
-    // // 3. Loop through your Vec<Vec<String>> and send it to the monitor!
-    // for row in &vec {
-    //     let mut row_string = String::new();
-    //     for col in row {
-    //         row_string.push_str(col);
-    //         row_string.push('|');
-    //     }
-    //     row_string.push('\n');
-        
-    //     // Send this row to the monitor
-    //     monitor_out.write_all(row_string.as_bytes())?;
-    // }
-    
-    // // 4. Send the '!' character to tell the monitor you are finished
-    // monitor_out.write_all(b"!\n")?;
-    // monitor_out.flush()?;
-
+    monitor_out.flush()?;
     Ok(())
 }
 
