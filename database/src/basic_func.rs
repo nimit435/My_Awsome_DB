@@ -12,6 +12,7 @@ use crate::{
     io_setup::{setup_disk_io, setup_monitor_io},
 };
 
+
 pub fn read_block(block_id : usize , ctx : &Vec<(String , DataType)> , disk_out : &mut impl Write , disk_buf : &mut impl BufRead) -> Result<Vec<Vec<String>>,String> {
     let mut input = String::new();
     disk_out.write_all(String::from("get block-size\n").as_bytes()).map_err(|e| e.to_string())?;
@@ -128,14 +129,14 @@ pub fn write_block(strt_ind :&mut usize , res : &Vec<Vec<String>> , ctx : &Vec<(
             }
         }
         if curr_size + byte_row.len() <= block_size  {
-            disk_out.write_all(format!{"put block {} 1]\n" , strt_ind  }.as_bytes()).map_err(|e| e.to_string());
+            disk_out.write_all(format!{"put block {} 1\n" , strt_ind  }.as_bytes()).map_err(|e| e.to_string());
             disk_out.flush();
             disk_out.write_all(&byte_row).map_err(|e| e.to_string());
         }
         else {
             curr_size = byte_row.len();
             *strt_ind += 1;
-            disk_out.write_all(format!{"put block {} 1]\n" , strt_ind  }.as_bytes()).map_err(|e| e.to_string());
+            disk_out.write_all(format!{"put block {} 1\n" , strt_ind  }.as_bytes()).map_err(|e| e.to_string());
             disk_out.flush();
             disk_out.write_all(&byte_row).map_err(|e| e.to_string());
         }

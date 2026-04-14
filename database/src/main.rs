@@ -58,7 +58,7 @@ fn db_main() -> Result<()> {
     //     String::from_utf8_lossy(&buf[..50])
     // );
     input_line.clear();
-    disk_out.write_all(format!{"get anon-start-block"}.as_bytes()).map_err(|e| e.to_string());
+    disk_out.write_all(format!{"get anon-start-block\n"}.as_bytes()).map_err(|e| e.to_string());
     disk_out.flush();
     disk_buf_reader.read_line(&mut input_line).map_err(|e| e.to_string());
     let mut write_block : usize = input_line.trim().parse().expect("Error in parsing");
