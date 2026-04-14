@@ -15,32 +15,16 @@ pub fn master(write_ind : &mut usize , query : &query::QueryOp ,  disk_buf : &mu
             let mut input = String::new();
             match query {
                 query::QueryOp::Scan(data) => {
-                    let mut actual_file_id = String::new();
-            let mut ind = 0;
-            let mut inpt = 0;
-            
-            for table in ctx.get_table_specs() {
-                // Match the table name to the query's table_id
-                if table.name == data.table_id {
-                    actual_file_id = table.file_id.clone();
-                    inpt = ind;
-                    break;
-                }
-                ind += 1;
-            }
-
-            if actual_file_id.is_empty() {
-                panic!("Could not find file_id for table: {}", data.table_id);
-            }
-            disk_out.write_all(format!{"get file start-block {}\n",actual_file_id}.as_bytes()).map_err(|e|e.to_string());
+            disk_out.write_all(format!{"get file start-block {}\n",data.table_id}.as_bytes()).map_err(|e|e.to_string());
             disk_out.flush();
             disk_buf.read_line(&mut input).map_err(|e|e.to_string());
             let strt_block = input.trim().parse().expect("Wrong file.");
             input.clear();
-            disk_out.write_all(format!{"get file num-blocks {}\n" , strt_block}.as_bytes()).map_err(|e|e.to_string());
+            println!("ACTUAL_FILE_ID : {}" , data.table_id);
+            disk_out.write_all(format!{"get file num-blocks {}\n" , data.table_id}.as_bytes()).map_err(|e|e.to_string());
             disk_out.flush();
             disk_buf.read_line(&mut input).map_err(|e|e.to_string());
-            let num_of_blocks : usize = input.trim().parse().expect("Error parsing int");
+            let num_of_blocks :usize  = input.trim().parse().expect("Error parsing int");
             let mut inpt = 0;
             let mut ind = 0;
             for i in ctx.get_table_specs() {

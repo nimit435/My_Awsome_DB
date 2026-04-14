@@ -1,0 +1,1 @@
+SELECT c_custkey, ''  FROM customer;
